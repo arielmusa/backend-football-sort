@@ -43,4 +43,45 @@ playersRouter.delete("/:id", (req, res) => {
   });
 });
 
+// team_player routes
+playersRouter.post("/:id/team/:teamId", (req, res) => {
+  const id = req.params.id;
+  const teamId = req.params.teamId;
+
+  const checkSql = `
+  SELECT team_player.*, teams.players_limit
+  FROM team_player 
+  INNER JOIN teams 
+  ON team_player.team_id = teams.id
+  
+  WHERE team_player.team_id = ?`;
+
+  db.query(checkSql, [teamId], (err, results) => {
+    if (err) return res.status(500).json({ message: "Database query failed" });
+    const playersLimit = results[0].players_limit || 0;
+    if (results.length >= playersLimit || 0) {
+      return res
+        .status(400)
+        .json({ message: "Team has reached players limit" });
+    }
+    const checkPlayerSql = `SELECT * FROM team_player WHERE team_id = ? AND player_id = ?`;
+
+    db.query(checkPlayerSql, [teamId, id], (err, results) => {
+      if (err)
+        return res.status(500).json({ message: "Database query failed" });
+      if (results.length > 0) {
+        return res
+          .status(400)
+          .json({ message: "Player is already assigned to the team" });
+      }
+      const sql = `INSERT INTO team_player (team_id, player_id) VALUES (?,?);`;
+
+      db.query(sql, [teamId, id], (err, results) => {
+        if (err)
+          return res.status(500).json({ message: "Database query failed" });
+        return res.status(201).json(results);
+      });
+    });
+  });
+});
 export { playersRouter };
