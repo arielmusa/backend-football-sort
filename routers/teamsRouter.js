@@ -1,44 +1,29 @@
 import express from "express";
 import { db } from "../config/db.js";
+import { index, show, store, destroy } from "../controllers/teamController.js";
 
 const teamsRouter = express.Router();
 
-teamsRouter.get("", (req, res) => {
-  const sql = `SELECT * FROM teams`;
+teamsRouter.get("", index);
 
-  db.query(sql, (err, result) => {
-    if (err) return res.status(500).json({ message: "Database query failed" });
-    res.json(result);
-  });
-});
+teamsRouter.get("/:id", show);
 
-teamsRouter.get("/:id", (req, res) => {
+teamsRouter.post("", store);
+
+teamsRouter.delete("/:id", destroy);
+
+// team_player routes
+teamsRouter.get("/:id/players", (req, res) => {
   const id = req.params.id;
-  const sql = `SELECT * FROM teams WHERE id = ?`;
+
+  const sql = `SELECT players.* FROM team_player
+    INNER JOIN players
+    ON players.id = team_player.player_id
+    WHERE team_id = ?`;
 
   db.query(sql, [id], (err, results) => {
     if (err) return res.status(500).json({ message: "Database query failed" });
-    res.json(results);
-  });
-});
-
-teamsRouter.post("", (req, res) => {
-  const { name, players_limit } = req.body;
-  const sql = `INSERT INTO teams (name, players_limit) VALUES (?,?)`;
-
-  db.query(sql, [name, players_limit], (err, results) => {
-    if (err) return res.status(500).json({ message: "Database query failed" });
-    res.status(201).json(results);
-  });
-});
-
-teamsRouter.delete("/:id", (req, res) => {
-  const id = req.params.id;
-  const sql = `DELETE FROM teams WHERE id = ?`;
-
-  db.query(sql, [id], (err, results) => {
-    if (err) return res.status(500).json({ message: "Database query failed" });
-    res.sendStatus(204);
+    return res.json(results);
   });
 });
 
