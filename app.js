@@ -7,7 +7,7 @@ import { playersRouter } from "./routers/playersRouter.js";
 
 const app = express();
 
-app.use(cors({ origin: "http://localhost:5173" }));
+app.use(cors());
 app.use(express.json());
 
 app.use("/teams", teamsRouter);
@@ -17,4 +17,4 @@ app.get("/", (req, res) => {
   res.json({ message: "Welcome" });
 });
 
-app.listen(3000, () => console.log(`Listening port 3000`));
+app.listen(3000, `0.0.0.0`, () => console.log(`Listening port 3000`));
