@@ -24,10 +24,11 @@ playersRouter.get("/:id", (req, res) => {
 });
 
 playersRouter.post("", (req, res) => {
-  const sql = `INSERT INTO players (name, surname, role) VALUES (?, ? ,?)`;
-  const { name, surname, role } = req.body;
+  const sql = `INSERT INTO players (name, surname, role, member) VALUES (?, ? ,?, ?)`;
+  const { name, surname, role, member } = req.body;
+  const memberValue = member ? 1 : 0;
 
-  db.query(sql, [name, surname, role], (err, results) => {
+  db.query(sql, [name, surname, role, memberValue], (err, results) => {
     if (err) return res.status(500).json({ message: "Database query failed" });
     res.status(201).json(results);
   });
@@ -51,15 +52,15 @@ playersRouter.post("/:id/team/:teamId", (req, res) => {
   const checkSql = `
   SELECT team_player.*, teams.players_limit
   FROM team_player 
-  INNER JOIN teams 
+  LEFT JOIN teams 
   ON team_player.team_id = teams.id
   
   WHERE team_player.team_id = ?`;
 
   db.query(checkSql, [teamId], (err, results) => {
     if (err) return res.status(500).json({ message: "Database query failed" });
-    const playersLimit = results[0].players_limit || 0;
-    if (results.length >= playersLimit || 0) {
+    const playersLimit = results[0]?.players_limit || 0;
+    if (results.length > playersLimit) {
       return res
         .status(400)
         .json({ message: "Team has reached players limit" });
